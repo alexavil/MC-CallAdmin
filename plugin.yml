@@ -1,0 +1,16 @@
+name: CallAdmin
+main: org.calladmin.main
+version: 0.5-beta1
+api-version: 1.14
+prefix: 
+commands:
+  calladmin:
+    description: Send a message to admins.
+    usage: /calladmin <player> <reason>
+  cainfo:
+    description: Display the plugin info
+    usage: /cainfo  
+permissions:
+  calladmin.exempt:
+    description: Protect players from being reported
+    default: op  
