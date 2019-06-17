@@ -16,7 +16,6 @@ public class main extends JavaPlugin {
     @Override
     public void onEnable() {
     	plugin = this;
-    	//Set default config values
     	//Server Info value is a stock MOTD, in future it should grab the Server MOTD
     	config.addDefault("Webhook URL", "");
         config.addDefault("Webhook Avatar URL", "");
@@ -24,7 +23,7 @@ public class main extends JavaPlugin {
         config.addDefault("Webhook Username", "CallAdmin");
         config.addDefault("Server Info", "A Minecraft Server");
         config.options().copyDefaults(true);
-        saveConfig();    	
+        saveConfig();
 
     }
    
@@ -69,6 +68,10 @@ public class main extends JavaPlugin {
             String webhookurl = config.getString("Webhook URL");
             if (webhookurl.length() == 0) {
             	sender.sendMessage("[CallAdmin] Discord Webhook URL is not set! Please edit your config.yml or contact the server administrator.");
+            	return true;
+            }
+            if(player == target) {
+            	sender.sendMessage("[CallAdmin] You can't report yourself!");
             	return true;
             }
             if(target.hasPermission("calladmin.exempt")) {
