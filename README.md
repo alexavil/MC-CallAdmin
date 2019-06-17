@@ -13,8 +13,3 @@ Make sure the webhook is set to a channel which only admins have access to as th
 Setting the webhook URL is mandatory for the plugin to work. Default username is set to CallAdmin and Default Server Info is set to "A Minecraft Server". You can leave the webhook avatar blank if you don't want to use it.
 
 Use pre-releases **at your own risk!**
-_________________________________________________________
-
-[APG] All Platform Gaming website - https://apg-clan.org/
-
-[APG] Discord - https://discord.gg/6NCrwgy
