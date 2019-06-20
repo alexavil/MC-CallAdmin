@@ -24,6 +24,8 @@ public class main extends JavaPlugin {
         config.addDefault("Server Info", "A Minecraft Server");
         config.options().copyDefaults(true);
         saveConfig();
+        @SuppressWarnings("unused")
+		Metrics metrics = new Metrics(this); 
 
     }
    
@@ -38,7 +40,7 @@ public class main extends JavaPlugin {
             String label,
             String[] args) {
     	if (command.getName().equalsIgnoreCase("cainfo")) {
-    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.5-beta1");
+    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.5-beta2");
     		return true;
     	}
     	//Main command
