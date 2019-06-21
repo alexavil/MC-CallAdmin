@@ -25,7 +25,8 @@ public class main extends JavaPlugin {
         config.options().copyDefaults(true);
         saveConfig();
         @SuppressWarnings("unused")
-		Metrics metrics = new Metrics(this); 
+		Metrics metrics = new Metrics(this);
+        new UpdateChecker(this).checkForUpdate();
 
     }
    
@@ -40,7 +41,7 @@ public class main extends JavaPlugin {
             String label,
             String[] args) {
     	if (command.getName().equalsIgnoreCase("cainfo")) {
-    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.5-beta2");
+    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.5");
     		return true;
     	}
     	//Main command
