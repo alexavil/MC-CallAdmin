@@ -1,19 +1,29 @@
 name: CallAdmin
 main: org.calladmin.main
-version: 0.5
+version: 0.6
 api-version: 1.14
-prefix: 
+prefix:
+depend: [Vault] 
 commands:
   calladmin:
-    description: Send a message to admins.
+    description: Report a player or an issue
     usage: /calladmin <player> <reason>
   cainfo:
     description: Display the plugin info
-    usage: /cainfo  
+    usage: /cainfo
+  caresolve:
+    description: Resolve the report
+    usage: /caresolve <player>       
 permissions:
   calladmin.exempt:
-    description: Protect players from being reported
+    description: Protects players from being reported
     default: op
   calladmin.notify:
-    description: Get update alerts
-    default: op        
+    description: Allows to get update alerts
+    default: op
+  calladmin.admin:
+    description: Admin override
+    default: op    
+  calladmin.reporter:
+    description: Used to prevent the reporter from escaping. Negate for groups with -'*' permission node.
+    default: false

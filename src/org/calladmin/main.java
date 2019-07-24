@@ -7,11 +7,17 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import java.util.logging.Logger;
+
+import net.milkbowl.vault.permission.Permission;
  
 public class main extends JavaPlugin {
 	public static main plugin;
-	FileConfiguration config = getConfig();
+	public FileConfiguration config = getConfig();
+	private static final Logger log = Logger.getLogger("Minecraft");
+	static Permission perms = null;
  
     @Override
     public void onEnable() {
@@ -22,18 +28,37 @@ public class main extends JavaPlugin {
         config.addDefault("Message Content", "");
         config.addDefault("Webhook Username", "CallAdmin");
         config.addDefault("Server Info", "A Minecraft Server");
+        config.addDefault("Ban Reporter on Leave?", true);
+        config.addDefault("Ban Time", "1d");
+        config.addDefault("Ban Reason", "Banned: CallAdmin abuse.");
         config.options().copyDefaults(true);
         saveConfig();
         @SuppressWarnings("unused")
 		Metrics metrics = new Metrics(this);
         new UpdateChecker(this).checkForUpdate();
+        getServer().getPluginManager().registerEvents(new EventListener(), this);
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            log.severe("ALERT: Vault not found! Plugin will not start.");            
+        }
+        if (getServer().getPluginManager().getPlugin("Essentials") == null) {
+        	log.severe("ALERT: Essentials not found! Automatic bans will be disabled if they're on.");
+        }
+        setupPermissions();
 
     }
+    
    
     @Override
     public void onDisable() {
        
     }
+    
+    private boolean setupPermissions() {
+        RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager().getRegistration(Permission.class);
+        perms = rsp.getProvider();
+        return perms != null;
+    }
+    
    
     @Override
     public boolean onCommand(CommandSender sender,
@@ -41,7 +66,7 @@ public class main extends JavaPlugin {
             String label,
             String[] args) {
     	if (command.getName().equalsIgnoreCase("cainfo")) {
-    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.5");
+    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.6");
     		return true;
     	}
     	//Main command
@@ -56,10 +81,10 @@ public class main extends JavaPlugin {
         	if (args.length == 1) {
         		sender.sendMessage("[CallAdmin] Please specify a reason!");
         	}
-        	if (args.length > 1) {
+        	if (args.length > 1) {     
         	Player player = Bukkit.getPlayer(sender.getName());
             Player target = Bukkit.getPlayer(args[0]);
-            String reason = ""; 
+            String reason = "";
             for(int i = 1; i < args.length; i++){
                 String arg = args[i] + " "; 
                 reason = reason + arg;
@@ -81,7 +106,12 @@ public class main extends JavaPlugin {
             	sender.sendMessage("[CallAdmin] You can't report this player!");
             	return true;
             }
-            sender.sendMessage("[CallAdmin] Message sent to admins!");
+            sender.sendMessage("[CallAdmin] Reported a player!");
+            if ((config.getBoolean("Ban Reporter on Leave?") == true) && (main.plugin.getServer().getPluginManager().getPlugin("Essentials") != null)) {
+            	sender.sendMessage("[CallAdmin] WARNING! You will be automatically banned if you leave the server.");
+            	sender.sendMessage("[CallAdmin] Please wait until an admin arrives and resolves your report.");
+                perms.playerAdd(player,"calladmin.reporter");
+            }
             DiscordWebhook webhook = new DiscordWebhook(webhookurl);
             webhook.setContent(config.getString("Message Content"));
             webhook.setAvatarUrl(config.getString("Webhook Avatar URL"));
@@ -97,7 +127,7 @@ public class main extends JavaPlugin {
             .setThumbnail("")
             .setFooter("", "")
             .setImage("")
-            .setAuthor(config.getString("Server Info"), "", "")
+            .setAuthor(config.getString("Server Info") + "", "", "")
             .setUrl(""));
             try {
 				webhook.execute();
@@ -107,8 +137,29 @@ public class main extends JavaPlugin {
 			} //Handle exception
             return true;
         	}
-        	return false;
         }
+    	if (command.getName().equalsIgnoreCase("caresolve")) {
+    		if (sender.hasPermission("calladmin.admin")) {
+    			if (args.length == 0) {
+            		sender.sendMessage("[CallAdmin] Please specify a player!");
+            		return true;
+            	}
+            	if (args.length == 1) {
+            		Player player = Bukkit.getPlayer(args[0]);
+            		if(player.hasPermission("calladmin.reporter")) {
+            			perms.playerRemove(player,"calladmin.reporter");
+            			player.sendMessage("[CallAdmin] Your report has been resolved.");
+            			return true;
+    		} else {
+    			sender.sendMessage("[CallAdmin] No pending reports from this player!");
+    			return true;
+    		}
+            	}
+    		} else {
+    			sender.sendMessage("[CallAdmin] You do not have permission to do that!");
+    			return true;
+    		}
+    	}
 		return false;
     }
 }
