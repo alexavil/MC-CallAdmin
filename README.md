@@ -8,7 +8,7 @@ Experimental Minecraft CallAdmin plugin with Discord WebHook support
 4. Restart the server to apply the changes.
 
 # Notes
-Make sure the webhook is set to a channel which only admins have access to as the message is set to @here (you will be able to customize it in future releases)
+The default message is set to @here. You can edit it in the config.
 
 Setting the webhook URL is mandatory for the plugin to work. Default username is set to CallAdmin and Default Server Info is set to "A Minecraft Server". You can leave the webhook avatar blank if you don't want to use it.
 
