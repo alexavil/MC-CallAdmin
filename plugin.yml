@@ -1,9 +1,8 @@
 name: CallAdmin
 main: org.calladmin.main
-version: 0.6
+version: 0.7
 api-version: 1.14
 prefix:
-depend: [Vault] 
 commands:
   calladmin:
     description: Report a player or an issue
@@ -13,7 +12,7 @@ commands:
     usage: /cainfo
   caresolve:
     description: Resolve the report
-    usage: /caresolve <player>       
+    usage: /caresolve <player> <reason>      
 permissions:
   calladmin.exempt:
     description: Protects players from being reported
@@ -23,7 +22,4 @@ permissions:
     default: op
   calladmin.admin:
     description: Admin override
-    default: op    
-  calladmin.reporter:
-    description: Used to prevent the reporter from escaping. Negate for groups with -'*' permission node.
-    default: false
+    default: op

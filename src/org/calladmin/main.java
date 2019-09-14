@@ -1,24 +1,32 @@
 package org.calladmin;
 import java.awt.Color;
+import java.io.File;
 import java.io.IOException;
-
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitScheduler;
+
+import java.util.Random;
 import java.util.logging.Logger;
 
 import net.milkbowl.vault.permission.Permission;
  
-public class main extends JavaPlugin {
+public class main extends JavaPlugin implements Listener {
 	public static main plugin;
 	public FileConfiguration config = getConfig();
 	private static final Logger log = Logger.getLogger("Minecraft");
 	static Permission perms = null;
- 
+    
+    
     @Override
     public void onEnable() {
     	plugin = this;
@@ -28,37 +36,32 @@ public class main extends JavaPlugin {
         config.addDefault("Message Content", "");
         config.addDefault("Webhook Username", "CallAdmin");
         config.addDefault("Server Info", "A Minecraft Server");
-        config.addDefault("Ban Reporter on Leave?", true);
-        config.addDefault("Ban Time", "1d");
-        config.addDefault("Ban Reason", "Banned: CallAdmin abuse.");
+        config.addDefault("Enable Automatic Bans?", true);
+        config.addDefault("Reporter Ban Time", "1d");
+        config.addDefault("Target Ban Time", "1d");
+        config.addDefault("Reporter Ban Reason", "Banned: CallAdmin abuse.");
+        config.addDefault("Target Ban Reason", "Banned: Disconnecting while a report is active.");
+        config.createSection("Reports");
         config.options().copyDefaults(true);
         saveConfig();
         @SuppressWarnings("unused")
 		Metrics metrics = new Metrics(this);
         new UpdateChecker(this).checkForUpdate();
-        getServer().getPluginManager().registerEvents(new EventListener(), this);
-        if (getServer().getPluginManager().getPlugin("Vault") == null) {
-            log.severe("ALERT: Vault not found! Plugin will not start.");            
-        }
+        getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new TargetQuit(), this);
         if (getServer().getPluginManager().getPlugin("Essentials") == null) {
         	log.severe("ALERT: Essentials not found! Automatic bans will be disabled if they're on.");
         }
-        setupPermissions();
 
     }
+    
     
    
     @Override
     public void onDisable() {
        
     }
-    
-    private boolean setupPermissions() {
-        RegisteredServiceProvider<Permission> rsp = getServer().getServicesManager().getRegistration(Permission.class);
-        perms = rsp.getProvider();
-        return perms != null;
-    }
-    
+            
    
     @Override
     public boolean onCommand(CommandSender sender,
@@ -66,7 +69,7 @@ public class main extends JavaPlugin {
             String label,
             String[] args) {
     	if (command.getName().equalsIgnoreCase("cainfo")) {
-    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.6");
+    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.7");
     		return true;
     	}
     	//Main command
@@ -82,7 +85,7 @@ public class main extends JavaPlugin {
         		sender.sendMessage("[CallAdmin] Please specify a reason!");
         	}
         	if (args.length > 1) {     
-        	Player player = Bukkit.getPlayer(sender.getName());
+        	Player player = Bukkit.getPlayer(sender.getName());        	
             Player target = Bukkit.getPlayer(args[0]);
             String reason = "";
             for(int i = 1; i < args.length; i++){
@@ -107,10 +110,24 @@ public class main extends JavaPlugin {
             	return true;
             }
             sender.sendMessage("[CallAdmin] Reported a player!");
-            if ((config.getBoolean("Ban Reporter on Leave?") == true) && (main.plugin.getServer().getPluginManager().getPlugin("Essentials") != null)) {
+            Random id = new Random();
+            int ID = (id.nextInt(999)+1);
+            String ReportID = Integer.toString(ID);
+            if ((config.getBoolean("Enable Automatic Bans?") == true) && (main.plugin.getServer().getPluginManager().getPlugin("Essentials") != null)) {
             	sender.sendMessage("[CallAdmin] WARNING! You will be automatically banned if you leave the server.");
             	sender.sendMessage("[CallAdmin] Please wait until an admin arrives and resolves your report.");
-                perms.playerAdd(player,"calladmin.reporter");
+            	String reporter = player.getName();
+            	config.createSection("Reports." + reporter);
+            	config.set("Reports." + reporter + ".Report ID", ReportID);
+            	config.set("Reports." + reporter + ".Target", target.getName());
+            	config.set("Reports." + reporter + ".Reason", reason);
+            	File save = new File(getDataFolder(), "config.yml");
+            	try {
+					config.save(save);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}           	
             }
             DiscordWebhook webhook = new DiscordWebhook(webhookurl);
             webhook.setContent(config.getString("Message Content"));
@@ -127,7 +144,7 @@ public class main extends JavaPlugin {
             .setThumbnail("")
             .setFooter("", "")
             .setImage("")
-            .setAuthor(config.getString("Server Info") + "", "", "")
+            .setAuthor(config.getString("Server Info") + " " + "# " + ReportID  , "", "")
             .setUrl(""));
             try {
 				webhook.execute();
@@ -144,11 +161,29 @@ public class main extends JavaPlugin {
             		sender.sendMessage("[CallAdmin] Please specify a player!");
             		return true;
             	}
-            	if (args.length == 1) {
+    			if (args.length == 1) {
+            		sender.sendMessage("[CallAdmin] Please specify a reason!");
+            		return true;
+            	}
+            	if (args.length > 1) {
             		Player player = Bukkit.getPlayer(args[0]);
-            		if(player.hasPermission("calladmin.reporter")) {
-            			perms.playerRemove(player,"calladmin.reporter");
+            		String reason = "";
+            		for(int i = 1; i < args.length; i++){
+                        String arg = args[i] + " "; 
+                        reason = reason + arg;
+                    }
+            		String reporter = player.getName();
+                	ConfigurationSection report = config.getConfigurationSection("Reports." + reporter);
+                	if (report != null) {
             			player.sendMessage("[CallAdmin] Your report has been resolved.");
+            			config.set("Reports." + reporter, null);
+            			File save = new File(getDataFolder(), "config.yml");
+                    	try {
+        					config.save(save);
+        				} catch (IOException e) {
+        					// TODO Auto-generated catch block
+        					e.printStackTrace();
+        				}           	
             			return true;
     		} else {
     			sender.sendMessage("[CallAdmin] No pending reports from this player!");
@@ -161,5 +196,108 @@ public class main extends JavaPlugin {
     		}
     	}
 		return false;
+    }
+    
+
+	@EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event)
+    {		
+		Player player = event.getPlayer();
+		//Reporter behaviour
+		String reporter = player.getName();
+    	ConfigurationSection report = config.getConfigurationSection("Reports." + reporter);
+    	if (report != null) {
+			String webhookurl = config.getString("Webhook URL");
+			DiscordWebhook webhook = new DiscordWebhook(webhookurl);
+            webhook.setContent("");
+            webhook.setAvatarUrl(config.getString("Webhook Avatar URL"));
+            webhook.setUsername(config.getString("Webhook Username"));
+            webhook.setTts(false);
+            webhook.addEmbed(new DiscordWebhook.EmbedObject()
+                    .setTitle("")
+                    .setDescription("")
+                    .setColor(Color.RED)
+                    .addField("Reporter Left", "Reporter (" + player.getName() + ") has left the server. A ban for " + config.getString("Reporter Ban Time") + " " + "has been applied." , true)
+            .setThumbnail("")
+            .setFooter("", "")
+            .setImage("")
+            .setAuthor("", "", "")
+            .setUrl(""));
+            try {
+				webhook.execute();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} //Handle exception
+            if ((config.getBoolean("Enable Automatic Bans?") == true) && (main.plugin.getServer().getPluginManager().getPlugin("Essentials") != null)) {
+            	main.plugin.getServer().dispatchCommand(main.plugin.getServer().getConsoleSender(), "tempban " + player.getName() + " " + config.getString("Reporter Ban Time") + " " + config.getString("Reporter Ban Reason"));
+    			config.set("Reports." + reporter, null);
+    			File save = new File(getDataFolder(), "config.yml");
+            	try {
+					config.save(save);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+            if ((config.getBoolean("Enable Automatic Bans?") == false) || (main.plugin.getServer().getPluginManager().getPlugin("Essentials") == null)) {
+            	config.set("Reports." + reporter, null);
+            	File save = new File(getDataFolder(), "config.yml");
+            	try {
+					config.save(save);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}           	
+            }
+		}   	
+    }		
+	
+	@EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event)
+    {
+		Player player = event.getPlayer();
+		if(player.hasPermission("calladmin.admin")) {		
+	        BukkitScheduler scheduler = main.plugin.getServer().getScheduler();
+	        scheduler.scheduleSyncDelayedTask(main.plugin, new Runnable() {
+	            @Override
+	            public void run() {
+	            	for(Player player : Bukkit.getServer().getOnlinePlayers())
+	                {
+	        				config.set("Reports." + player, null);
+	        				File save = new File(getDataFolder(), "config.yml");
+	                    	try {
+	        					config.save(save);
+	        				} catch (IOException e) {
+	        					// TODO Auto-generated catch block
+	        					e.printStackTrace();
+	        				}           	
+	                    	player.sendMessage("[CallAdmin] Your report has been resolved automatically.");
+	                    	String webhookurl = config.getString("Webhook URL");
+	            			DiscordWebhook webhook = new DiscordWebhook(webhookurl);
+	                        webhook.setContent("");
+	                        webhook.setAvatarUrl(config.getString("Webhook Avatar URL"));
+	                        webhook.setUsername(config.getString("Webhook Username"));
+	                        webhook.setTts(false);
+	                        webhook.addEmbed(new DiscordWebhook.EmbedObject()
+	                                .setTitle("")
+	                                .setDescription("")
+	                                .setColor(Color.RED)
+	                                .addField("Report Resolved", "Report sent by " + player.getName() + " " + "has been resolved automatically." , true)
+	                        .setThumbnail("")
+	                        .setFooter("", "")
+	                        .setImage("")
+	                        .setAuthor("", "", "")
+	                        .setUrl(""));
+	                        try {
+	            				webhook.execute();
+	            			} catch (IOException e) {
+	            				// TODO Auto-generated catch block
+	            				e.printStackTrace();
+	            			} //Handle exception
+	                    }
+	                }	            
+	        }, 2400L);			
+}
     }
 }
