@@ -11,5 +11,3 @@ Experimental Minecraft CallAdmin plugin with Discord WebHook support
 The default message is set to @here. You can edit it in the config.
 
 Setting the webhook URL is mandatory for the plugin to work. Default username is set to CallAdmin and Default Server Info is set to "A Minecraft Server". You can leave the webhook avatar blank if you don't want to use it.
-
-Negate the calladmin.reporter permission node for groups which have all permissions (a * node). This permission is used as a flag to assign Automatic Abuse Bans. When negating, put - -calladmin.reporter **before** the '*' node.
