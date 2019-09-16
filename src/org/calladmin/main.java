@@ -69,7 +69,7 @@ public class main extends JavaPlugin implements Listener {
             String label,
             String[] args) {
     	if (command.getName().equalsIgnoreCase("cainfo")) {
-    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.7");
+    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.7.1");
     		return true;
     	}
     	//Main command
@@ -175,7 +175,7 @@ public class main extends JavaPlugin implements Listener {
             		String reporter = player.getName();
                 	ConfigurationSection report = config.getConfigurationSection("Reports." + reporter);
                 	if (report != null) {
-            			player.sendMessage("[CallAdmin] Your report has been resolved.");
+            			player.sendMessage("[CallAdmin] Your report has been resolved.");           			
             			config.set("Reports." + reporter, null);
             			File save = new File(getDataFolder(), "config.yml");
                     	try {
@@ -183,7 +183,29 @@ public class main extends JavaPlugin implements Listener {
         				} catch (IOException e) {
         					// TODO Auto-generated catch block
         					e.printStackTrace();
-        				}           	
+        				}
+                    	String webhookurl = config.getString("Webhook URL");
+            			DiscordWebhook webhook = new DiscordWebhook(webhookurl);
+                        webhook.setContent("");
+                        webhook.setAvatarUrl(config.getString("Webhook Avatar URL"));
+                        webhook.setUsername(config.getString("Webhook Username"));
+                        webhook.setTts(false);
+                        webhook.addEmbed(new DiscordWebhook.EmbedObject()
+                                .setTitle("")
+                                .setDescription("")
+                                .setColor(Color.RED)
+                                .addField("Report Resolved", "A report sent by " + player.getName() + " has been resolved by " + sender.getName() + ". Reason: " + reason + " ." , true)
+                        .setThumbnail("")
+                        .setFooter("", "")
+                        .setImage("")
+                        .setAuthor("", "", "")
+                        .setUrl(""));
+                        try {
+            				webhook.execute();
+            			} catch (IOException e) {
+            				// TODO Auto-generated catch block
+            				e.printStackTrace();
+            			} //Handle exception
             			return true;
     		} else {
     			sender.sendMessage("[CallAdmin] No pending reports from this player!");
@@ -262,17 +284,14 @@ public class main extends JavaPlugin implements Listener {
 	        scheduler.scheduleSyncDelayedTask(main.plugin, new Runnable() {
 	            @Override
 	            public void run() {
-	            	for(Player player : Bukkit.getServer().getOnlinePlayers())
-	                {
-	        				config.set("Reports." + player, null);
+	            		config.set("Reports", null);        				
 	        				File save = new File(getDataFolder(), "config.yml");
 	                    	try {
 	        					config.save(save);
 	        				} catch (IOException e) {
 	        					// TODO Auto-generated catch block
 	        					e.printStackTrace();
-	        				}           	
-	                    	player.sendMessage("[CallAdmin] Your report has been resolved automatically.");
+	        				}
 	                    	String webhookurl = config.getString("Webhook URL");
 	            			DiscordWebhook webhook = new DiscordWebhook(webhookurl);
 	                        webhook.setContent("");
@@ -283,7 +302,7 @@ public class main extends JavaPlugin implements Listener {
 	                                .setTitle("")
 	                                .setDescription("")
 	                                .setColor(Color.RED)
-	                                .addField("Report Resolved", "Report sent by " + player.getName() + " " + "has been resolved automatically." , true)
+	                                .addField("Reports Resolved", "All active reports have been resolved automatically." , true)
 	                        .setThumbnail("")
 	                        .setFooter("", "")
 	                        .setImage("")
@@ -295,9 +314,9 @@ public class main extends JavaPlugin implements Listener {
 	            				// TODO Auto-generated catch block
 	            				e.printStackTrace();
 	            			} //Handle exception
-	                    }
-	                }	            
-	        }, 2400L);			
-}
+	                    }	            
+	        }, 2400L);
+	        }
     }
 }
+ 

@@ -1,6 +1,6 @@
 name: CallAdmin
 main: org.calladmin.main
-version: 0.7
+version: 0.7.1
 api-version: 1.14
 prefix:
 commands:
