@@ -69,7 +69,7 @@ public class main extends JavaPlugin implements Listener {
             String label,
             String[] args) {
     	if (command.getName().equalsIgnoreCase("cainfo")) {
-    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.7.1");
+    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.7.2");
     		return true;
     	}
     	//Main command
@@ -284,7 +284,9 @@ public class main extends JavaPlugin implements Listener {
 	        scheduler.scheduleSyncDelayedTask(main.plugin, new Runnable() {
 	            @Override
 	            public void run() {
-	            		config.set("Reports", null);        				
+	            	if ((config.getConfigurationSection("Reports") != null) && (config.getConfigurationSection("Reports").getKeys(false).isEmpty() == false)) {
+	            		config.set("Reports", null);
+	            		config.createSection("Reports");
 	        				File save = new File(getDataFolder(), "config.yml");
 	                    	try {
 	        					config.save(save);
@@ -314,7 +316,8 @@ public class main extends JavaPlugin implements Listener {
 	            				// TODO Auto-generated catch block
 	            				e.printStackTrace();
 	            			} //Handle exception
-	                    }	            
+	                    }
+                		            }
 	        }, 2400L);
 	        }
     }
