@@ -2,8 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="C:/Users/admin/Desktop/buildtools/Spigot/Spigot-API/target/spigot-api-1.14.4-R0.1-SNAPSHOT-shaded.jar"/>
-	<classpathentry kind="lib" path="C:/Users/admin/Downloads/Vault.jar"/>
-	<classpathentry kind="lib" path="C:/Users/admin/Downloads/SQLiteLib.jar"/>
+	<classpathentry kind="lib" path="/home/alex/Загрузки/Spigot/Spigot-API/target/spigot-api-1.15.1-R0.1-SNAPSHOT-shaded.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

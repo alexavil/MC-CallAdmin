@@ -18,13 +18,11 @@ import org.bukkit.scheduler.BukkitScheduler;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import net.milkbowl.vault.permission.Permission;
  
 public class main extends JavaPlugin implements Listener {
 	public static main plugin;
 	public FileConfiguration config = getConfig();
 	private static final Logger log = Logger.getLogger("Minecraft");
-	static Permission perms = null;
     
     
     @Override
