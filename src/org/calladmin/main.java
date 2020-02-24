@@ -67,20 +67,87 @@ public class main extends JavaPlugin implements Listener {
             String label,
             String[] args) {
     	if (command.getName().equalsIgnoreCase("cainfo")) {
-    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.7.2");
+    		sender.sendMessage("[CallAdmin] This server is running CallAdmin v0.8");
     		return true;
     	}
-    	//Main command
         if (command.getName().equalsIgnoreCase("calladmin")) {
             if (!(sender instanceof Player)) {
                 sender.sendMessage("I didn't think someone with Console access would ever call for help. But you're special.");
                 return true;
             }
         	if (args.length == 0) {
+        		sender.sendMessage("[CallAdmin] Please specify your message!");
+        		return true;
+        	}
+        	if (args.length > 0) {     
+        	Player player = Bukkit.getPlayer(sender.getName());
+            String reason = "";
+            for(int i = 0; i < args.length; i++){
+                String arg = args[i] + " "; 
+                reason = reason + arg;
+            }
+            String webhookurl = config.getString("Webhook URL");
+            if (webhookurl.length() == 0) {
+            	sender.sendMessage("[CallAdmin] Discord Webhook URL is not set! Please edit your config.yml or contact the server administrator.");
+            	return true;
+            }
+            sender.sendMessage("[CallAdmin] Message sent to admins!");
+            Random id = new Random();
+            int ID = (id.nextInt(999)+1);
+            String ReportID = Integer.toString(ID);
+            if ((config.getBoolean("Enable Automatic Bans?") == true) && (main.plugin.getServer().getPluginManager().getPlugin("Essentials") != null)) {
+            	sender.sendMessage("[CallAdmin] WARNING! You will be automatically banned if you leave the server.");
+            	sender.sendMessage("[CallAdmin] Please wait until an admin arrives and resolves your report.");
+            	String reporter = player.getName();
+            	config.createSection("Reports." + reporter);
+            	config.set("Reports." + reporter + ".Report ID", ReportID);
+            	config.set("Reports." + reporter + ".Reason", reason);
+            	File save = new File(getDataFolder(), "config.yml");
+            	try {
+					config.save(save);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}           	
+            }
+            DiscordWebhook webhook = new DiscordWebhook(webhookurl);
+            webhook.setContent(config.getString("Message Content"));
+            webhook.setAvatarUrl(config.getString("Webhook Avatar URL"));
+            webhook.setUsername(config.getString("Webhook Username"));
+            webhook.setTts(false);
+            webhook.addEmbed(new DiscordWebhook.EmbedObject()
+                    .setTitle("")
+                    .setDescription("")
+                    .setColor(Color.RED)
+                    .addField("Message", reason, true)
+            .addField("Reporter", player.getName(), true)
+            .setThumbnail("")
+            .setFooter("", "")
+            .setImage("")
+            .setAuthor(config.getString("Server Info") + " " + "# " + ReportID + " - General Report"  , "", "")
+            .setUrl(""));
+            try {
+				webhook.execute();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} //Handle exception
+            return true;
+        	}
+        }
+    	//Report command
+        if (command.getName().equalsIgnoreCase("report")) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage("I didn't think someone with Console access would ever call for help. But you're special.");
+                return true;
+            }
+        	if (args.length == 0) {
         		sender.sendMessage("[CallAdmin] Please specify a player!");
+        		return true;
         	}
         	if (args.length == 1) {
         		sender.sendMessage("[CallAdmin] Please specify a reason!");
+        		return true;
         	}
         	if (args.length > 1) {     
         	Player player = Bukkit.getPlayer(sender.getName());        	
@@ -142,7 +209,7 @@ public class main extends JavaPlugin implements Listener {
             .setThumbnail("")
             .setFooter("", "")
             .setImage("")
-            .setAuthor(config.getString("Server Info") + " " + "# " + ReportID  , "", "")
+            .setAuthor(config.getString("Server Info") + " " + "# " + ReportID + " - Player Report" , "", "")
             .setUrl(""));
             try {
 				webhook.execute();
@@ -173,7 +240,7 @@ public class main extends JavaPlugin implements Listener {
             		String reporter = player.getName();
                 	ConfigurationSection report = config.getConfigurationSection("Reports." + reporter);
                 	if (report != null) {
-            			player.sendMessage("[CallAdmin] Your report has been resolved.");           			
+            			player.sendMessage("[CallAdmin] Your report(s) have been resolved.");           			
             			config.set("Reports." + reporter, null);
             			File save = new File(getDataFolder(), "config.yml");
                     	try {
@@ -192,7 +259,7 @@ public class main extends JavaPlugin implements Listener {
                                 .setTitle("")
                                 .setDescription("")
                                 .setColor(Color.RED)
-                                .addField("Report Resolved", "A report sent by " + player.getName() + " has been resolved by " + sender.getName() + ". Reason: " + reason + " ." , true)
+                                .addField("Report Resolved", "Report(s) sent by " + player.getName() + " have been resolved by " + sender.getName() + ". Reason: " + reason + "." , true)
                         .setThumbnail("")
                         .setFooter("", "")
                         .setImage("")

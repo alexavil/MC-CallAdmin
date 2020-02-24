@@ -1,12 +1,15 @@
 name: CallAdmin
 main: org.calladmin.main
-version: 0.7.2
+version: 0.8
 api-version: 1.14
 prefix:
 commands:
   calladmin:
-    description: Report a player or an issue
-    usage: /calladmin <player> <reason>
+    description: Send a message to admins
+    usage: /calladmin <message>
+  report:
+    description: Report a player
+    usage: /report <player> <reason>
   cainfo:
     description: Display the plugin info
     usage: /cainfo
